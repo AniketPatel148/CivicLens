@@ -7,6 +7,7 @@ import ReportDetail from './components/ReportDetail';
 import LocationPicker from './components/LocationPicker';
 import ZipcodeStats from './components/ZipcodeStats';
 import axios from 'axios';
+import { API_BASE } from './config';
 
 // Calculate distance between two points in km (Haversine formula)
 const getDistanceKm = (lat1, lng1, lat2, lng2) => {
@@ -66,7 +67,7 @@ function App() {
   // Fetch all non-resolved reports
   const fetchReports = useCallback(async () => {
     try {
-      const response = await axios.get('/api/reports?limit=100');
+      const response = await axios.get(`${API_BASE}/reports?limit=100`);
       // Filter to show only non-resolved
       const activeReports = response.data.data.filter(r => r.status !== 'resolved');
       setReports(activeReports);
@@ -117,7 +118,7 @@ function App() {
     setView('submitting');
 
     try {
-      const response = await axios.post('/api/reports', {
+      const response = await axios.post(`${API_BASE}/reports`, {
         ...formData,
         lat: selectedLocation.lat,
         lng: selectedLocation.lng,

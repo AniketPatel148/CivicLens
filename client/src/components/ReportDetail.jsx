@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE } from '../config';
 
 function ReportDetail({ reportId, onBack }) {
   const [report, setReport] = useState(null);
@@ -10,7 +11,7 @@ function ReportDetail({ reportId, onBack }) {
     const fetchReport = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`/api/reports/${reportId}`);
+        const response = await axios.get(`${API_BASE}/reports/${reportId}`);
         setReport(response.data.data);
       } catch (err) {
         setError('Failed to load report details');
