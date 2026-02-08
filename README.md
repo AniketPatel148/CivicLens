@@ -102,7 +102,7 @@ PORT=3001
 
 ## 👥 Team
 
-Built with ☕ by [Your Team Name]
+Built with ☕ by RevRage
 
 ---
 
