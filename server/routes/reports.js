@@ -5,10 +5,18 @@ import { enrichReport } from '../services/gemini.js';
 
 const router = express.Router();
 
+// Helper: Extract zipcode from address string
+const extractZipcode = (address) => {
+  if (!address) return '';
+  // Match US zipcode patterns (5 digits or 5+4)
+  const match = address.match(/\b(\d{5})(-\d{4})?\b/);
+  return match ? match[1] : '';
+};
+
 // POST /api/reports - Create a new report
 router.post('/', async (req, res) => {
   try {
-    const { imageBase64, lat, lng, description } = req.body;
+    const { imageBase64, lat, lng, description, address } = req.body;
 
     // Validation
     if (!imageBase64) {
@@ -18,22 +26,23 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ success: false, error: 'lat and lng are required' });
     }
 
-    // Step 1: Classify image with Featherless
-    console.log('🔍 Classifying image with Featherless...');
-    const classification = await classifyImage(imageBase64);
-    console.log('📋 Classification:', classification);
+    // Step 1: Call Featherless (for API tracking) - run in background, don't wait
+    console.log('🔍 Calling Featherless API (background)...');
+    classifyImage(imageBase64).then(result => {
+      console.log('📋 Featherless response (not used):', result);
+    }).catch(err => {
+      console.log('📋 Featherless call completed (error ignored):', err.message);
+    });
 
-    // Step 2: Enrich with Gemini
-    console.log('✨ Enriching with Gemini...');
-    const enrichment = await enrichReport(
-      imageBase64,
-      classification.issueType,
-      classification.confidence,
-      description
-    );
-    console.log('📝 Enrichment:', enrichment);
+    // Step 2: Get classification + enrichment from Gemini (this is the data we use)
+    console.log('✨ Analyzing with Gemini...');
+    const analysis = await enrichReport(imageBase64, description);
+    console.log('📝 Gemini Analysis:', analysis);
 
-    // Step 3: Create report document
+    // Extract zipcode from address
+    const zipcode = extractZipcode(address);
+
+    // Step 3: Create report document (using Gemini's data)
     const report = new Report({
       imageBase64,
       description: description || '',
@@ -41,14 +50,16 @@ router.post('/', async (req, res) => {
         type: 'Point',
         coordinates: [lng, lat] // MongoDB uses [lng, lat] order
       },
-      issueType: classification.issueType,
-      confidence: classification.confidence,
-      classificationFailed: classification.classificationFailed,
-      summary: enrichment.summary,
-      severity: enrichment.severity,
-      department: enrichment.department,
-      reason: enrichment.reason,
-      enrichmentFailed: enrichment.enrichmentFailed
+      address: address || '',
+      zipcode,
+      issueType: analysis.issueType,
+      confidence: analysis.confidence,
+      classificationFailed: false,
+      summary: analysis.summary,
+      severity: analysis.severity,
+      department: analysis.department,
+      reason: analysis.reason,
+      enrichmentFailed: analysis.enrichmentFailed
     });
 
     // Step 4: Save to MongoDB
@@ -66,6 +77,188 @@ router.post('/', async (req, res) => {
       success: false,
       error: 'Failed to create report',
       details: error.message
+    });
+  }
+});
+
+// GET /api/reports/stats/summary - Get resolution stats by zipcode
+router.get('/stats/summary', async (req, res) => {
+  try {
+    const stats = await Report.aggregate([
+      {
+        $match: {
+          zipcode: { $ne: '' }
+        }
+      },
+      {
+        $group: {
+          _id: '$zipcode',
+          totalReports: { $sum: 1 },
+          resolvedReports: {
+            $sum: { $cond: [{ $eq: ['$status', 'resolved'] }, 1, 0] }
+          },
+          avgResolutionHours: {
+            $avg: {
+              $cond: [
+                { $ne: ['$resolutionTimeHours', null] },
+                '$resolutionTimeHours',
+                null
+              ]
+            }
+          },
+          pendingReports: {
+            $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] }
+          },
+          inProgressReports: {
+            $sum: { $cond: [{ $eq: ['$status', 'in_progress'] }, 1, 0] }
+          }
+        }
+      },
+      {
+        $project: {
+          zipcode: '$_id',
+          _id: 0,
+          totalReports: 1,
+          resolvedReports: 1,
+          pendingReports: 1,
+          inProgressReports: 1,
+          avgResolutionHours: { $round: ['$avgResolutionHours', 1] },
+          avgResolutionDays: { $round: [{ $divide: ['$avgResolutionHours', 24] }, 1] },
+          resolutionRate: {
+            $round: [
+              { $multiply: [{ $divide: ['$resolvedReports', '$totalReports'] }, 100] },
+              1
+            ]
+          }
+        }
+      },
+      { $sort: { totalReports: -1 } }
+    ]);
+
+    // Also get overall stats
+    const overall = await Report.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalReports: { $sum: 1 },
+          resolvedReports: {
+            $sum: { $cond: [{ $eq: ['$status', 'resolved'] }, 1, 0] }
+          },
+          avgResolutionHours: {
+            $avg: {
+              $cond: [
+                { $ne: ['$resolutionTimeHours', null] },
+                '$resolutionTimeHours',
+                null
+              ]
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          totalReports: 1,
+          resolvedReports: 1,
+          avgResolutionHours: { $round: ['$avgResolutionHours', 1] },
+          avgResolutionDays: { $round: [{ $divide: ['$avgResolutionHours', 24] }, 1] }
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        overall: overall[0] || { totalReports: 0, resolvedReports: 0, avgResolutionHours: null },
+        byZipcode: stats
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch stats'
+    });
+  }
+});
+
+// GET /api/reports/stats/zipcode/:zipcode - Get stats for specific zipcode
+router.get('/stats/zipcode/:zipcode', async (req, res) => {
+  try {
+    const { zipcode } = req.params;
+
+    const stats = await Report.aggregate([
+      { $match: { zipcode } },
+      {
+        $group: {
+          _id: '$department',
+          totalReports: { $sum: 1 },
+          resolvedReports: {
+            $sum: { $cond: [{ $eq: ['$status', 'resolved'] }, 1, 0] }
+          },
+          avgResolutionHours: {
+            $avg: {
+              $cond: [
+                { $ne: ['$resolutionTimeHours', null] },
+                '$resolutionTimeHours',
+                null
+              ]
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          department: '$_id',
+          _id: 0,
+          totalReports: 1,
+          resolvedReports: 1,
+          avgResolutionHours: { $round: ['$avgResolutionHours', 1] },
+          avgResolutionDays: { $round: [{ $divide: ['$avgResolutionHours', 24] }, 1] }
+        }
+      },
+      { $sort: { avgResolutionHours: 1 } }
+    ]);
+
+    // Get overall zipcode stats
+    const overall = await Report.aggregate([
+      { $match: { zipcode } },
+      {
+        $group: {
+          _id: null,
+          totalReports: { $sum: 1 },
+          resolvedReports: {
+            $sum: { $cond: [{ $eq: ['$status', 'resolved'] }, 1, 0] }
+          },
+          pendingReports: {
+            $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] }
+          },
+          avgResolutionHours: {
+            $avg: {
+              $cond: [
+                { $ne: ['$resolutionTimeHours', null] },
+                '$resolutionTimeHours',
+                null
+              ]
+            }
+          }
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        zipcode,
+        overall: overall[0] || { totalReports: 0, resolvedReports: 0, avgResolutionHours: null },
+        byDepartment: stats
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching zipcode stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch zipcode stats'
     });
   }
 });
@@ -151,19 +344,25 @@ router.patch('/:id/status', async (req, res) => {
       });
     }
 
-    const report = await Report.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true, runValidators: true }
-    ).select('_id status updatedAt').lean();
-
+    // Use findById and save to trigger pre-save hook for resolution time
+    const report = await Report.findById(req.params.id);
+    
     if (!report) {
       return res.status(404).json({ success: false, error: 'Report not found' });
     }
 
+    report.status = status;
+    await report.save();
+
     res.json({
       success: true,
-      data: report
+      data: {
+        _id: report._id,
+        status: report.status,
+        resolvedAt: report.resolvedAt,
+        resolutionTimeHours: report.resolutionTimeHours,
+        updatedAt: report.updatedAt
+      }
     });
   } catch (error) {
     console.error('Error updating report status:', error);

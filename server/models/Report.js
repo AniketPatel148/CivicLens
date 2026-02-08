@@ -24,6 +24,17 @@ const reportSchema = new mongoose.Schema({
     }
   },
   
+  // Address info (for analytics)
+  address: {
+    type: String,
+    default: ''
+  },
+  zipcode: {
+    type: String,
+    default: '',
+    index: true
+  },
+  
   // AI Classification (Featherless)
   issueType: {
     type: String,
@@ -65,6 +76,16 @@ const reportSchema = new mongoose.Schema({
     default: 'pending'
   },
   
+  // Resolution tracking
+  resolvedAt: {
+    type: Date,
+    default: null
+  },
+  resolutionTimeHours: {
+    type: Number,
+    default: null
+  },
+  
   // Failure Flags
   classificationFailed: {
     type: Boolean,
@@ -78,9 +99,20 @@ const reportSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Pre-save hook to calculate resolution time
+reportSchema.pre('save', function(next) {
+  if (this.isModified('status') && this.status === 'resolved' && !this.resolvedAt) {
+    this.resolvedAt = new Date();
+    const createdAt = this.createdAt || new Date();
+    this.resolutionTimeHours = Math.round((this.resolvedAt - createdAt) / (1000 * 60 * 60));
+  }
+  next();
+});
+
 // Geospatial index for bounding box queries
 reportSchema.index({ location: '2dsphere' });
 reportSchema.index({ status: 1 });
 reportSchema.index({ createdAt: -1 });
+reportSchema.index({ zipcode: 1, status: 1 });
 
 export default mongoose.model('Report', reportSchema);

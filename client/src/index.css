@@ -1,36 +1,37 @@
 /* === CSS Variables === */
 :root {
-  --bg-dark: #0a0a0f;
-  --bg-card: rgba(20, 20, 30, 0.8);
-  --bg-card-hover: rgba(30, 30, 45, 0.9);
-  --border-subtle: rgba(255, 255, 255, 0.1);
-  --border-accent: rgba(99, 102, 241, 0.5);
+  --bg-dark: #0f0f1a;
+  --bg-card: rgba(25, 25, 45, 0.9);
+  --bg-card-hover: rgba(40, 40, 70, 0.95);
+  --border-subtle: rgba(99, 102, 241, 0.2);
+  --border-accent: rgba(139, 92, 246, 0.6);
   
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-primary: #f8fafc;
+  --text-secondary: #a5b4fc;
+  --text-muted: #6366f1;
   
-  --accent-primary: #6366f1;
-  --accent-secondary: #8b5cf6;
-  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+  --accent-primary: #818cf8;
+  --accent-secondary: #a78bfa;
+  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 35%, #c084fc 70%, #f472b6 100%);
   
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --danger: #ef4444;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
   
-  --severity-1: #22c55e;
-  --severity-2: #84cc16;
-  --severity-3: #f59e0b;
-  --severity-4: #f97316;
-  --severity-5: #ef4444;
+  --severity-1: #34d399;
+  --severity-2: #a3e635;
+  --severity-3: #fbbf24;
+  --severity-4: #fb923c;
+  --severity-5: #f87171;
   
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 28px;
   
-  --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.3);
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 50px rgba(139, 92, 246, 0.4);
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-colorful: 0 4px 20px rgba(99, 102, 241, 0.3);
   
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -79,8 +80,10 @@ body {
   padding: 24px;
   overflow-y: auto;
   border-right: 1px solid var(--border-subtle);
-  backdrop-filter: blur(12px);
-  background: rgba(10, 10, 15, 0.7);
+  backdrop-filter: blur(16px);
+  background: 
+    linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.05) 50%, transparent 100%),
+    rgba(15, 15, 26, 0.92);
 }
 
 .logo {
@@ -115,6 +118,67 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+/* Location Header */
+.location-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.15) 100%);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-lg);
+  margin-bottom: 8px;
+}
+
+.location-icon {
+  font-size: 2rem;
+  filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.5));
+}
+
+.location-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.location-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.location-radius {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* Stat card highlight */
+.stat-card.highlight {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(168, 85, 247, 0.2) 100%);
+  border: 1px solid var(--border-accent);
+}
+
+.stat-card.highlight .stat-value {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Empty state icon */
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }
 
 .new-report-btn {
@@ -1322,3 +1386,628 @@ body {
   opacity: 1;
 }
 
+/* === Dashboard Actions === */
+.dashboard-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stats-btn {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: 1px solid var(--border-accent);
+  background: transparent;
+  color: var(--accent-primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.stats-btn:hover {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+/* === ZipcodeStats === */
+.stats-container {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.stats-header {
+  margin-bottom: 20px;
+}
+
+.stats-header h2 {
+  font-size: 1.4rem;
+  margin-bottom: 4px;
+}
+
+.stats-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.zipcode-search {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.zipcode-input {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+}
+
+.zipcode-input:focus {
+  border-color: var(--accent-primary);
+  outline: none;
+}
+
+.search-btn {
+  padding: 12px 20px;
+  background: var(--accent-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.search-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stats-error {
+  padding: 12px;
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stats-container .stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  text-align: center;
+}
+
+.stats-container .stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: block;
+}
+
+.stats-container .stat-value.rating {
+  font-size: 1rem;
+}
+
+.stats-container .stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.overall-stats h3,
+.zipcode-results h3,
+.zipcode-list h3 {
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.department-stats {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.department-stats h4 {
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+}
+
+.dept-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dept-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+}
+
+.dept-name {
+  color: var(--text-primary);
+}
+
+.dept-count {
+  color: var(--text-muted);
+}
+
+.dept-time {
+  font-weight: 600;
+  min-width: 40px;
+  text-align: right;
+}
+
+.zipcode-results {
+  background: var(--bg-card);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.clear-btn {
+  width: 100%;
+  padding: 10px;
+  margin-top: 12px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-btn:hover {
+  background: var(--bg-card-hover);
+}
+
+.zipcode-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zipcode-row {
+  display: grid;
+  grid-template-columns: 70px 1fr 50px auto;
+  gap: 8px;
+  align-items: center;
+  padding: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.zipcode-row:hover {
+  border-color: var(--border-accent);
+  background: var(--bg-card-hover);
+}
+
+.zip-code {
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.zip-reports {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.zip-time {
+  font-weight: 600;
+  text-align: right;
+}
+
+.zip-rate {
+  font-size: 0.85rem;
+  text-align: right;
+}
+
+.stats-help {
+  margin-top: 24px;
+  padding: 16px;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.stats-help strong {
+  color: var(--text-primary);
+}
+
+.back-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 16px;
+  transition: color 0.2s;
+}
+
+.back-btn:hover {
+  color: var(--accent-primary);
+}
+
+/* ========================================
+   MOBILE RESPONSIVE STYLES
+   ======================================== */
+
+/* Mobile-first layout - stack vertically on small screens */
+@media (max-width: 768px) {
+  /* Main layout - sidebar on top for mobile */
+  .app-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
+  }
+
+  /* Sidebar takes full screen on mobile */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100;
+    padding: 16px;
+    padding-bottom: 80px; /* Space for potential bottom nav */
+    border-right: none;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Map hidden by default on mobile, shown when viewing reports */
+  .map-container {
+    display: none;
+  }
+
+  /* Logo smaller on mobile */
+  .logo {
+    margin-bottom: 16px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+
+  .logo h1 {
+    font-size: 1.1rem;
+  }
+
+  /* Dashboard actions stack on small phones */
+  .dashboard-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .new-report-btn,
+  .stats-btn {
+    padding: 14px 20px;
+    font-size: 1rem;
+  }
+
+  /* Stats row - 2 columns on mobile */
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .stats-row .stat-card:last-child {
+    grid-column: span 2;
+  }
+
+  .stat-card {
+    padding: 12px 8px;
+  }
+
+  .stat-value {
+    font-size: 1.3rem;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+  }
+
+  /* Reports list cards */
+  .report-card {
+    padding: 14px;
+  }
+
+  .report-summary {
+    font-size: 0.9rem;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  /* Section title */
+  .section-title {
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+
+  /* Upload form */
+  .upload-form {
+    gap: 16px;
+  }
+
+  .file-drop-zone {
+    padding: 24px 16px;
+    min-height: 120px;
+  }
+
+  .camera-options {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .camera-btn,
+  .file-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 0.95rem;
+  }
+
+  .description-input {
+    min-height: 80px;
+    font-size: 16px; /* Prevent iOS zoom */
+  }
+
+  .submit-btn {
+    padding: 16px;
+    font-size: 1rem;
+  }
+
+  /* Location picker */
+  .location-picker {
+    gap: 16px;
+  }
+
+  .location-picker h2 {
+    font-size: 1.1rem;
+  }
+
+  .address-search {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .address-input {
+    font-size: 16px; /* Prevent iOS zoom */
+    padding: 14px;
+  }
+
+  .search-btn {
+    width: 100%;
+    padding: 14px;
+  }
+
+  .location-option {
+    padding: 14px;
+  }
+
+  /* Location summary */
+  .location-summary {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .change-location-btn {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  /* Success view */
+  .success-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .success-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .success-actions button {
+    width: 100%;
+  }
+
+  /* Result card */
+  .result-card {
+    padding: 16px;
+  }
+
+  /* Report detail */
+  .report-detail {
+    padding: 0;
+  }
+
+  .report-detail .issue-badge,
+  .report-detail .status-badge {
+    font-size: 0.85rem;
+    padding: 6px 12px;
+  }
+
+  /* ZipcodeStats */
+  .stats-container {
+    padding: 0;
+  }
+
+  .zipcode-search {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .zipcode-input {
+    font-size: 16px; /* Prevent iOS zoom */
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .zipcode-row {
+    grid-template-columns: 60px 1fr;
+    grid-template-rows: auto auto;
+    gap: 4px 8px;
+  }
+
+  .zip-time,
+  .zip-rate {
+    grid-column: 2;
+  }
+
+  .dept-row {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+  }
+
+  .dept-count {
+    grid-column: span 2;
+    text-align: left;
+  }
+
+  /* Loading spinner */
+  .loading-spinner {
+    padding: 40px 20px;
+  }
+
+  .loading-spinner .spinner {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Error message */
+  .error-message {
+    margin: 12px 0;
+    padding: 12px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Extra small phones */
+@media (max-width: 380px) {
+  .sidebar {
+    padding: 12px;
+  }
+
+  .new-report-btn,
+  .stats-btn {
+    padding: 12px 16px;
+    font-size: 0.9rem;
+  }
+
+  .stat-value {
+    font-size: 1.1rem;
+  }
+
+  .report-card {
+    padding: 12px;
+  }
+
+  .issue-badge,
+  .status-badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+  }
+}
+
+/* Landscape mode on mobile */
+@media (max-width: 900px) and (orientation: landscape) {
+  .sidebar {
+    padding: 12px 24px;
+  }
+
+  .stats-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .stats-row .stat-card:last-child {
+    grid-column: auto;
+  }
+
+  .dashboard-actions {
+    flex-direction: row;
+  }
+
+  .camera-options {
+    flex-direction: row;
+  }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+  /* Larger touch targets */
+  .report-card,
+  .location-option,
+  .zipcode-row {
+    min-height: 48px;
+  }
+
+  /* Remove hover effects on touch devices */
+  .new-report-btn:hover,
+  .report-card:hover,
+  .location-option:hover {
+    transform: none;
+  }
+
+  /* Better tap feedback */
+  .report-card:active,
+  .location-option:active,
+  .new-report-btn:active {
+    opacity: 0.8;
+    transform: scale(0.98);
+  }
+}
+
+/* Safe area insets for notched phones */
+@supports (padding: max(0px)) {
+  .sidebar {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: max(80px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Tablet - side by side but smaller sidebar */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .app-container {
+    grid-template-columns: 340px 1fr;
+  }
+
+  .sidebar {
+    padding: 20px;
+  }
+}

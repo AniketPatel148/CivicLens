@@ -1,4 +1,4 @@
-function Dashboard({ reports, onNewReport, onViewReport }) {
+function Dashboard({ reports, allReports = [], locationName, onNewReport, onViewReport, onViewStats }) {
   const issueIcons = {
     pothole: '🕳️',
     trash: '🗑️',
@@ -29,40 +29,61 @@ function Dashboard({ reports, onNewReport, onViewReport }) {
 
   // Group by status for stats
   const stats = {
-    total: reports.length,
+    nearby: reports.length,
+    citywide: allReports.length,
     pending: reports.filter(r => r.status === 'pending').length,
     inProgress: reports.filter(r => r.status === 'in_progress' || r.status === 'acknowledged').length
   };
 
   return (
     <div className="dashboard">
-      <button className="new-report-btn" onClick={onNewReport}>
-        <span className="btn-icon">📷</span>
-        Report New Issue
-      </button>
+      {/* Location header */}
+      {locationName && (
+        <div className="location-header">
+          <span className="location-icon">📍</span>
+          <div className="location-info">
+            <span className="location-name">{locationName}</span>
+            <span className="location-radius">Issues within 10km</span>
+          </div>
+        </div>
+      )}
+
+      <div className="dashboard-actions">
+        <button className="new-report-btn" onClick={onNewReport}>
+          <span className="btn-icon">📷</span>
+          Report New Issue
+        </button>
+        <button className="stats-btn" onClick={onViewStats}>
+          <span className="btn-icon">📊</span>
+          View Stats
+        </button>
+      </div>
 
       <div className="stats-row">
-        <div className="stat-card">
-          <span className="stat-value">{stats.total}</span>
-          <span className="stat-label">Active Issues</span>
+        <div className="stat-card highlight">
+          <span className="stat-value">{stats.nearby}</span>
+          <span className="stat-label">Near You</span>
         </div>
         <div className="stat-card">
           <span className="stat-value">{stats.pending}</span>
           <span className="stat-label">Pending</span>
         </div>
         <div className="stat-card">
-          <span className="stat-value">{stats.inProgress}</span>
-          <span className="stat-label">In Progress</span>
+          <span className="stat-value">{stats.citywide}</span>
+          <span className="stat-label">City-wide</span>
         </div>
       </div>
 
-      <h2 className="section-title">Recent Reports</h2>
+      <h2 className="section-title">
+        {reports.length > 0 ? `Issues Near You` : 'Recent Reports'}
+      </h2>
 
       <div className="reports-list">
         {reports.length === 0 ? (
           <div className="empty-state">
-            <p>No active issues in your area</p>
-            <p className="empty-subtext">Be the first to report a problem!</p>
+            <div className="empty-icon">🎉</div>
+            <p>No issues near you!</p>
+            <p className="empty-subtext">Your neighborhood looks great. Spot something? Report it!</p>
           </div>
         ) : (
           reports.slice(0, 10).map(report => (

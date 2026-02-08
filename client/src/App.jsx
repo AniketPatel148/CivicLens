@@ -1,13 +1,25 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import ReportMap from './components/ReportMap';
 import UploadForm from './components/UploadForm';
 import ResultCard from './components/ResultCard';
 import Dashboard from './components/Dashboard';
 import ReportDetail from './components/ReportDetail';
 import LocationPicker from './components/LocationPicker';
+import ZipcodeStats from './components/ZipcodeStats';
 import axios from 'axios';
 
-// Views: 'dashboard' | 'new-report' | 'location-picker' | 'submitting' | 'success' | 'detail'
+// Calculate distance between two points in km (Haversine formula)
+const getDistanceKm = (lat1, lng1, lat2, lng2) => {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng/2) * Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+};
+
+// Views: 'dashboard' | 'new-report' | 'location-picker' | 'submitting' | 'success' | 'detail' | 'stats'
 function App() {
   const [view, setView] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(false);
@@ -18,6 +30,38 @@ function App() {
   const [selectedReportId, setSelectedReportId] = useState(null);
   const [reports, setReports] = useState([]);
   const [focusLocation, setFocusLocation] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationName, setLocationName] = useState('');
+
+  // Get user's location on app load
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ lat: latitude, lng: longitude });
+          setFocusLocation({ lat: latitude, lng: longitude });
+          
+          // Try to get location name via reverse geocoding
+          try {
+            const res = await axios.get(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+            );
+            const addr = res.data.address;
+            const name = addr.city || addr.town || addr.suburb || addr.county || 'Your Area';
+            setLocationName(name);
+          } catch (e) {
+            setLocationName('Your Area');
+          }
+        },
+        () => {
+          // Fallback to Houston if location denied
+          setUserLocation({ lat: 29.7604, lng: -95.3698 });
+          setLocationName('Houston');
+        }
+      );
+    }
+  }, []);
 
   // Fetch all non-resolved reports
   const fetchReports = useCallback(async () => {
@@ -34,6 +78,24 @@ function App() {
   useEffect(() => {
     fetchReports();
   }, [fetchReports, refreshKey]);
+
+  // Filter reports by distance from user (within 10km)
+  const nearbyReports = useMemo(() => {
+    if (!userLocation) return reports;
+    return reports.filter(report => {
+      if (!report.location?.coordinates) return false;
+      const [lng, lat] = report.location.coordinates;
+      const distance = getDistanceKm(userLocation.lat, userLocation.lng, lat, lng);
+      return distance <= 10; // Within 10km
+    }).sort((a, b) => {
+      // Sort by distance
+      const [lngA, latA] = a.location.coordinates;
+      const [lngB, latB] = b.location.coordinates;
+      const distA = getDistanceKm(userLocation.lat, userLocation.lng, latA, lngA);
+      const distB = getDistanceKm(userLocation.lat, userLocation.lng, latB, lngB);
+      return distA - distB;
+    });
+  }, [reports, userLocation]);
 
   const handleStartNewReport = () => {
     setSelectedLocation(null);
@@ -58,7 +120,8 @@ function App() {
       const response = await axios.post('/api/reports', {
         ...formData,
         lat: selectedLocation.lat,
-        lng: selectedLocation.lng
+        lng: selectedLocation.lng,
+        address: selectedLocation.address || ''
       });
       setResult(response.data.data);
       setRefreshKey(prev => prev + 1);
@@ -108,20 +171,36 @@ function App() {
     handleViewReport(reportId);
   };
 
+  const handleViewStats = () => {
+    setView('stats');
+  };
+
   return (
     <div className="app-container">
       <aside className="sidebar">
         <div className="logo" onClick={handleBackToDashboard} style={{ cursor: 'pointer' }}>
-          <div className="logo-icon">📍</div>
-          <h1>Issue Reporter</h1>
+          <div className="logo-icon">🔍</div>
+          <h1>CivicLens</h1>
         </div>
 
         {view === 'dashboard' && (
           <Dashboard 
-            reports={reports}
+            reports={nearbyReports}
+            allReports={reports}
+            locationName={locationName}
             onNewReport={handleStartNewReport}
             onViewReport={handleViewReport}
+            onViewStats={handleViewStats}
           />
+        )}
+
+        {view === 'stats' && (
+          <>
+            <button className="back-btn" onClick={handleBackToDashboard}>
+              ← Back to Dashboard
+            </button>
+            <ZipcodeStats />
+          </>
         )}
 
         {view === 'location-picker' && (

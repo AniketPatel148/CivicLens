@@ -8,23 +8,31 @@ const FALLBACK_ENRICHMENT = {
   enrichmentFailed: true
 };
 
-const buildPrompt = (issueType, confidence, userDescription) => `
+const buildPrompt = (userDescription) => `
 You are an AI assistant for a city's neighborhood issue reporting system.
 
 CONTEXT:
 - A resident submitted a photo of a local issue
-- Our vision model classified it as: "${issueType}" (confidence: ${(confidence * 100).toFixed(0)}%)
 - User's description (if any): "${userDescription || 'None provided'}"
 
 TASK:
-Analyze the image and classification, then provide a JSON response with exactly these fields:
+Analyze the image and provide a JSON response with exactly these fields:
 
 {
+  "issueType": "<one of: pothole, trash, graffiti, streetlight, other>",
+  "confidence": <0.0-1.0>,
   "summary": "<1-2 sentence description for residents. Be specific about what you see, location details in the image, and potential impact. Use plain language.>",
   "severity": <1-5 integer>,
   "department": "<one of: public_works, sanitation, parks, utilities, police_non_emergency, general>",
   "reason": "<1 sentence explaining why this department should handle it>"
 }
+
+ISSUE TYPE CLASSIFICATION:
+- pothole: road damage, cracks, holes in pavement, sidewalk damage
+- trash: garbage, litter, overflowing bins, illegal dumping
+- graffiti: spray paint, vandalism, tags on walls/surfaces
+- streetlight: broken lights, damaged poles, dark areas
+- other: none of the above
 
 SEVERITY SCALE:
 1 = Minor cosmetic issue, no safety concern
@@ -42,8 +50,7 @@ DEPARTMENT ROUTING:
 - general: unclear or multiple departments needed
 
 RULES:
-- If the image doesn't match the classification, trust your own judgment
-- If you can't determine the issue, set severity=3 and department="general"
+- Look at the image carefully and classify based on what you actually see
 - Keep summary under 50 words
 - Be helpful and empathetic in tone
 
@@ -51,8 +58,9 @@ Respond with ONLY valid JSON, no markdown formatting.
 `;
 
 const VALID_DEPARTMENTS = ['public_works', 'sanitation', 'parks', 'utilities', 'police_non_emergency', 'general'];
+const VALID_ISSUE_TYPES = ['pothole', 'trash', 'graffiti', 'streetlight', 'other'];
 
-export const enrichReport = async (imageBase64, issueType, confidence, description) => {
+export const enrichReport = async (imageBase64, description) => {
   if (!process.env.GEMINI_API_KEY) {
     console.warn('⚠️ Gemini not configured, using fallback');
     return FALLBACK_ENRICHMENT;
@@ -82,7 +90,7 @@ export const enrichReport = async (imageBase64, issueType, confidence, descripti
               }
             },
             {
-              text: buildPrompt(issueType, confidence, description)
+              text: buildPrompt(description)
             }
           ]
         }]
@@ -113,6 +121,8 @@ export const enrichReport = async (imageBase64, issueType, confidence, descripti
 
     // Validate and sanitize response
     return {
+      issueType: VALID_ISSUE_TYPES.includes(parsed.issueType) ? parsed.issueType : 'other',
+      confidence: Math.min(1, Math.max(0, parseFloat(parsed.confidence) || 0.8)),
       summary: typeof parsed.summary === 'string' ? parsed.summary.slice(0, 500) : FALLBACK_ENRICHMENT.summary,
       severity: Math.min(5, Math.max(1, parseInt(parsed.severity) || 3)),
       department: VALID_DEPARTMENTS.includes(parsed.department) ? parsed.department : 'general',
